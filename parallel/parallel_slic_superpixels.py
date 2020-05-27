@@ -6,12 +6,12 @@ import numpy as np
 from scipy import ndimage as ndi
 
 from ..util import img_as_float, regular_grid
-from ..segmentation._slic import (_slic_cython,
-                                  _enforce_label_connectivity_cython)
+from ..segmentation._slic import _enforce_label_connectivity_cython
+from ..segmentation._parallel_slic import _slic_cython
 from ..color import rgb2lab
 
 
-def slic(image, n_segments=100, compactness=10., max_iter=10, sigma=0,
+def slicP(image, n_segments=100, compactness=10., max_iter=10, sigma=0,
          spacing=None, multichannel=True, convert2lab=None,
          enforce_connectivity=True, min_size_factor=0.5, max_size_factor=3,
          slic_zero=False):
@@ -178,13 +178,6 @@ def slic(image, n_segments=100, compactness=10., max_iter=10, sigma=0,
     #상위 함수로 함께 리턴한
     
     # enforc_connectivity 함수를 밖으로 빼야 할 수도 있다.
-    if enforce_connectivity:
-        segment_size = depth * height * width / n_segments
-        min_size = int(min_size_factor * segment_size)
-        max_size = int(max_size_factor * segment_size)
-        labels = _enforce_label_connectivity_cython(labels,
-                                                    min_size,
-                                                    max_size)
         
     if is_2d:
         labels = labels[0]
