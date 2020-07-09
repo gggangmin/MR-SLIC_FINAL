@@ -16,7 +16,7 @@ from skimage.segmentation._slic import _enforce_label_connectivity_cython
 import matplotlib.pyplot as plt
 import os
 import pandas as pd
-
+import boto3
 
 
 
@@ -33,8 +33,20 @@ print(sc.master)
 
 #path = "/home/ubuntu/superpixel-benchmark/data/BSDS500/images/all"
 path = "s3://aws-emr-resources-846035848117-us-west-2/all"
+'''
 file_list = os.listdir(path)
 file_list_img = [file for file in file_list if file.endswith(".jpg")]
+'''
+response_iterator = paginator.paginate(
+    Bucket='aws-emr-resources-846035848117-us-west-2',
+    Prefix='all'
+)
+file_list=[]
+for page in response_iterator:
+    for content in page['Contents']:
+        file_list.append(content['Key'][4:])
+file_list_img = [file for file in file_list if file.endswith(".jpg")]
+
 
 #split size
 # 폴더는 overlap+1
@@ -269,6 +281,7 @@ print(time_dict)
 
 
 # In[ ]:
+
 
 
 
