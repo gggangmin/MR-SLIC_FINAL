@@ -17,10 +17,7 @@ import matplotlib.pyplot as plt
 import os
 import pandas as pd
 import boto3
-
-
-
-
+import io
 
 
 #spark context
@@ -37,6 +34,9 @@ path = "s3://aws-emr-resources-846035848117-us-west-2/all"
 file_list = os.listdir(path)
 file_list_img = [file for file in file_list if file.endswith(".jpg")]
 '''
+client = boto3.client('s3')
+paginator = client.get_paginator('list_objects_v2')
+
 response_iterator = paginator.paginate(
     Bucket='aws-emr-resources-846035848117-us-west-2',
     Prefix='all'
@@ -60,7 +60,18 @@ for OriginSegments in [500]:
 
         name = img_name[:-4]
         #원본 이미지 메타데이터(결과 출력용)
-        images = Image.open(path+'/'+img_name)
+        
+        
+        
+        s3 = boto3.resource('s3',region_name='us-west-2')
+        bucket = s3.Bucket('aws-emr-resources-846035848117-us-west-2')
+        obj = bucket.Object('all/'+img_name)
+
+        file_stream = io.BytesIO()
+        obj.download_fileobj(file_stream)
+        
+        images = Image.open(file_stream)
+        #images = Image.open(path+'/'+img_name)
         #원본 이미지 크기
         (img_w,img_h) = images.size
         depth = 1
@@ -167,10 +178,19 @@ for OriginSegments in [500]:
             def Map(k):
                 #time check
                 start_time = time.time()
-
+                
                 #img = Image.open('/home/ubuntu/superpixel-benchmark/data/BSDS500/grid/'+img_shape+"/"+str(OriginSegments)+'/'+str(overlap)+'/'+ k[0] +'.jpg')
-                img = Image.open('s3://aws-emr-resources-846035848117-us-west-2/grid/'+img_shape+"/"+str(OriginSegments)+'/'+str(overlap)+'/'+ k[0] +'.jpg')
-                image = img_as_float(img)
+                
+                s3 = boto3.resource('s3',region_name='us-west-2')
+                bucket = s3.Bucket('aws-emr-resources-846035848117-us-west-2')
+                obj = bucket.Object('grid/'+img_shape+"/"+str(OriginSegments)+'/'+str(overlap)+'/'+ k[0] +'.jpg')
+                file_stream = io.BytesIO()
+                obj.download_fileobj(file_stream)
+
+                image = Image.open(file_stream)
+                
+                #img = Image.open('s3://aws-emr-resources-846035848117-us-west-2/grid/'+img_shape+"/"+str(OriginSegments)+'/'+str(overlap)+'/'+ k[0] +'.jpg')
+                #image = img_as_float(img)
 
                 segments,distances = slicP(image, n_segments = k[1], sigma = 5)
 
