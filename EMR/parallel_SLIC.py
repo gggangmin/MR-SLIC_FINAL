@@ -21,8 +21,14 @@ import io
 
 
 #spark context
+from pyspark import SparkConf
 from pyspark import SparkContext
 #sc = SparkContext(master='local[8]',appName='test')
+
+conf = SparkConf()
+conf.setMaster('yarn-client')
+conf.setAppName('spark-yarn')
+sc = SparkContext(conf=conf)
 print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
 print(sc.master)
 
@@ -53,7 +59,12 @@ file_list_img = [file for file in file_list if file.endswith(".jpg")]
 #number of partition
 time_dict = {}
 
-for OriginSegments in [500]:
+
+s3 = boto3.resource('s3',region_name='us-west-2')
+bucket = s3.Bucket('aws-emr-resources-846035848117-us-west-2')
+
+
+for OriginSegments in [2000]:
     testnum = 0
     partition = 8
     for img_name in file_list_img:
@@ -61,21 +72,22 @@ for OriginSegments in [500]:
         name = img_name[:-4]
         #원본 이미지 메타데이터(결과 출력용)
         
-        
-        
-        s3 = boto3.resource('s3',region_name='us-west-2')
-        bucket = s3.Bucket('aws-emr-resources-846035848117-us-west-2')
         obj = bucket.Object('all/'+img_name)
 
         file_stream = io.BytesIO()
         obj.download_fileobj(file_stream)
         
         images = Image.open(file_stream)
+
+        
         #images = Image.open(path+'/'+img_name)
         #원본 이미지 크기
         (img_w,img_h) = images.size
+        del images
+        
         depth = 1
 
+        file_stream.__exit__()
 
         #grid 분할하는데 필요한 정보
         #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -173,7 +185,7 @@ for OriginSegments in [500]:
 
 
             #이미지를 float으로 변환
-            images = img_as_float(images)
+            #images = img_as_float(images)
             #map 함수
             def Map(k):
                 #time check
@@ -195,7 +207,7 @@ for OriginSegments in [500]:
                 segments,distances = slicP(image, n_segments = k[1], sigma = 5)
 
                 finish_time = time.time()
-
+                file_stream.__exit__()
                 return segments, distances, start_time, finish_time, k[0][-1]
             #times, segments, distances 를 리턴받는다.
             stime = time.time()
@@ -267,7 +279,9 @@ for OriginSegments in [500]:
 
             #이미지 출력
             #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
+            del result
+            del labels
+            del datas
 
             '''
             #save result
@@ -296,9 +310,11 @@ for OriginSegments in [500]:
             '''
             overlap +=1
             
-            
+print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')            
 print(time_dict)
-
+import pickle
+with open('/home/hadoop/time.pickle','wb') as f:
+    pickle.dump(time_dict,f)
 
 # In[ ]:
 
