@@ -7,7 +7,7 @@
 # MR-SLIC_original
 from pyspark.context import SparkContext
 from skimage.segmentation import mark_boundaries
-from skimage import io
+import io
 import collections as coll
 import time
 from scipy import ndimage as ndi
@@ -29,6 +29,7 @@ import boto3
 from pyspark import SparkConf
 from pyspark import SparkContext
 #sc = SparkContext(master='local['+core+']',appName='test')
+core = 2
 
 conf = SparkConf()
 conf.setMaster('yarn-client')
@@ -70,7 +71,7 @@ s3 = boto3.resource('s3',region_name='us-west-2')
 bucket = s3.Bucket('aws-emr-resources-846035848117-us-west-2')
 
 
-for OriginSegments in [500]:
+for OriginSegments in [1000]:
     testnum = 0
     for img_name in file_list_img:
 
@@ -193,12 +194,12 @@ for OriginSegments in [500]:
                 
                 s3 = boto3.resource('s3',region_name='us-west-2')
                 bucket = s3.Bucket('aws-emr-resources-846035848117-us-west-2')
-                obj = bucket.Object('disjoint/'+img_shape+"/"+str(OriginSegments)+'/'+str(partition)+'/'+ k[0] +'.jpg')
+                obj = bucket.Object('disjoint/'+str(OriginSegments)+'/'+str(partition)+'/'+ k[0] +'.jpg')
                 file_stream = io.BytesIO()
                 obj.download_fileobj(file_stream)
 
                 image = Image.open(file_stream)
-                image = img_as_float(img)
+                #image = img_as_float(img)
 
                 segments,distances = slicP(image, n_segments = k[1], sigma = 5)
 
