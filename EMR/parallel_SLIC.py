@@ -64,7 +64,7 @@ s3 = boto3.resource('s3',region_name='us-west-2')
 bucket = s3.Bucket('aws-emr-resources-846035848117-us-west-2')
 
 
-for OriginSegments in [1000]:
+for OriginSegments in [2000]:
     testnum = 0
     partition = 8
     for img_name in file_list_img:
