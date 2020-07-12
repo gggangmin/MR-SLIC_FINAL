@@ -1,0 +1,71 @@
+s3에 ec2->s3전송으로 resource file upload 해두기
+# ec2 에서 aws로 폴더 바르게 전송(data를 보낼경우 data 내용물만 전송되니 주의)
+aws s3 cp data s3://aws-emr-resources-846035848117-us-west-2/ --recursive
+
+
+
+
+-create EMR cluster
+- anaconda 설치
+wget https://repo.anaconda.com/archive/Anaconda3-2020.02-Linux-x86_64.sh
+bash Anaconda3-2020.02-Linux-x86_64.sh
+#sudo nano /etc/profile
+
+nano env.sh
+#!/usr/bin/env bash
+echo -e '\nexport PATH=$HOME/anaconda3/bin:$PATH' >> $HOME/.bashrc && source $HOME/.bashrc
+# bind conda to spark
+echo -e "\nexport PYSPARK_PYTHON=/home/hadoop/anaconda3/bin/python" >> /etc/spark/conf/spark-env.sh
+echo "export PYSPARK_DRIVER_PYTHON=/home/hadoop/anaconda3/bin/jupyter" >> /etc/spark/conf/spark-env.sh
+echo "export PYSPARK_DRIVER_PYTHON_OPTS='notebook --no-browser --ip=0.0.0.0'" >> /etc/spark/conf/spark-env.sh
+
+#git 설치
+sudo yum install git
+git clone https://github.com/Radominic/MR-SLIC_FINAL
+cd MR-SLIC_FINAL
+cd parallel
+cp _parallel_slic.cpython-37m-x86_64-linux-gnu.so /home/hadoop/anaconda3/lib/python3.7/site-packages/skimage/segmentation
+cp _parallel_slic_master.cpython-37m-x86_64-linux-gnu.so /home/hadoop/anaconda3/lib/python3.7/site-packages/skimage/segmentation
+cp parallel_slic_superpixels.py /home/hadoop/anaconda3/lib/python3.7/site-packages/skimage/segmentation
+
+#key 전송
+scp -i SLIC.pem SLIC.pem hadoop@[public DNS]:/home/hadoop/
+
+#init 함수 수정
+from .parallel_slic_superpixels import slicP
+함수 slicP 추가 
+#boto3 
+pyspark 명령어로 jupyter 열어서 anaconda 안에 설치
+
+#anaconda 전송
+tar -cp anaconda3 | ssh -i SLIC.pem hadoop@[public dns] tar xvp -C /home/hadoop/
+
+
+##중요 anaconda3 전송하기전에 필요한 파일들 변경해놓기(boto3 포함)
+
+nano file.sh
+tar -cp anaconda3 | ssh -i SLIC.pem hadoop@ec2-44-234-119-154.us-west-2.compute.amazonaws.com tar xvp -C /home/hadoop/
+tar -cp anaconda3 | ssh -i SLIC.pem hadoop@ec2-34-223-43-245.us-west-2.compute.amazonaws.com tar xvp -C /home/hadoop/
+tar -cp anaconda3 | ssh -i SLIC.pem hadoop@ec2-34-223-108-111.us-west-2.compute.amazonaws.com	 tar xvp -C /home/hadoop/
+tar -cp anaconda3 | ssh -i SLIC.pem hadoop@ec2-44-234-41-239.us-west-2.compute.amazonaws.com	 tar xvp -C /home/hadoop/
+tar -cp anaconda3 | ssh -i SLIC.pem hadoop@ec2-34-222-192-30.us-west-2.compute.amazonaws.com	 tar xvp -C /home/hadoop/
+tar -cp anaconda3 | ssh -i SLIC.pem hadoop@ec2-44-234-60-53.us-west-2.compute.amazonaws.com	 tar xvp -C /home/hadoop/
+tar -cp anaconda3 | ssh -i SLIC.pem hadoop@ec2-34-222-175-15.us-west-2.compute.amazonaws.com	 tar xvp -C /home/hadoop/
+tar -cp anaconda3 | ssh -i SLIC.pem hadoop@ec2-34-223-103-7.us-west-2.compute.amazonaws.com	 tar xvp -C /home/hadoop/
+
+
+
+#실험돌리기 전에
+spark.executor.cores       1 고정
+spark.executor.memory      인스턴스당 하나만 들어가도록 조정
+spark.executor.instances 파티션 수 8
+
+
+
+
+
+
+
+
+
+
