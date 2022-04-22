@@ -1,5 +1,7 @@
 # parallel and accurate method for large-scale image segmentation
 
+paper : https://link.springer.com/content/pdf/10.1007/s11227-021-04027-5.pdf
+
 ### EMR 
 
 EMR env setting wiht test code
